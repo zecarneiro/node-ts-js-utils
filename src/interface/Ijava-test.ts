@@ -1,5 +1,5 @@
-import { IFileInfo } from './file-info';
-import { ICommandInfo } from './comand-info';
+import { IFileInfo } from './Ifile-info';
+import { ICommandInfo } from './Icomand-info';
 
 export interface IJavaTest {
     file: IFileInfo,

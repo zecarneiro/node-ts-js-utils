@@ -1,11 +1,10 @@
-import { Console } from './console';
-import { EShellType } from '../enum/shell-type';
-import { FileSystem } from './file-system';
-import { IJavaTest } from '../interface/java-test';
-import { IJavaVm } from '../interface/java-vm';
-import { TsJsUtilsApp } from '../ts-js-utils-app';
+import { Console } from './console/console';
+import { EShellType } from '../enum/Eshell-type';
+import { IJavaTest } from '../interface/Ijava-test';
+import { IJavaVm } from '../interface/Ijava-vm';
+import { ProcessorUtils } from '../processor-utils';
 
-export class Java extends TsJsUtilsApp {
+export class Java extends ProcessorUtils {
   constructor(
     private console: Console,
   ) {
@@ -27,7 +26,7 @@ export class Java extends TsJsUtilsApp {
     }
 
     // Insert class and method
-    if (data.file.basename && data.file.basename.length > 0 && FileSystem.fileExist(data.file.dirname)) {
+    if (data.file.basename && data.file.basename.length > 0 && this.fileSystem.fileExist(data.file.dirname)) {
       const method = data.method ? `#${data.method}` : '';
       const className = data.file.basename.split('.').slice(0, -1).join('.');
       command += ` -Dtest=${className}${method}`;
@@ -50,7 +49,7 @@ export class Java extends TsJsUtilsApp {
   }
 
   runVm(data: IJavaVm, shell: EShellType) {
-    if (FileSystem.fileExist(data.jarFile)) {
+    if (this.fileSystem.fileExist(data.jarFile)) {
       let cmd: string = this.javaExec;
       if (data.vmOptions) {
         data.vmOptions.forEach((option) => {

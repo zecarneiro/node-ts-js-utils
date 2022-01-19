@@ -1,23 +1,24 @@
-import { ResponseBuilder } from './../entities/response';
 import { Functions } from './functions';
-import { EFileType } from './../enum/file-type';
-import { Logger } from './logger';
-import { ISystemInfo } from '../interface/system-info';
-import { IFileInfo } from '../interface/file-info';
-import { IBase64 } from '../interface/base64';
+import { ResponseBuilder } from '../../entities/response';
+import { EFileType } from '../../enum/Efile-type';
+import { ISystemInfo } from '../../interface/Isystem-info';
+import { IFileInfo } from '../../interface/Ifile-info';
+import { IBase64 } from '../../interface/Ibase64';
 import * as fse from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import * as net from 'net';
-import { Response } from '../entities/response';
-import { TsJsUtilsApp } from '../ts-js-utils-app';
-import { EPlatformType } from '..';
-import { IDirectoryInfo } from '../interface/directory-info';
-import { Uri, window, workspace, WorkspaceFolder } from 'vscode';
+import { Response } from '../../entities/response';
+import { IDirectoryInfo } from '../../interface/Idirectory-info';
+import { EPlatformType } from '../../enum/Eplatform-type';
+import { Logger } from './logger';
 
-export class FileSystem extends TsJsUtilsApp {
+export class FileSystem {
+  protected functions: Functions;
+  protected logger: Logger;
   constructor() {
-    super();
+    this.functions = global.nodeTsJsUtils.functions;
+    this.logger = global.nodeTsJsUtils.logger;
   }
 
   /* -------------------------------------------------------------------------- */
@@ -29,8 +30,8 @@ export class FileSystem extends TsJsUtilsApp {
   /*                                   PUBLIC                                   */
   /* -------------------------------------------------------------------------- */
   createTempFile(fileName: string): string {
-    const temFile = FileSystem.resolvePath(`${this.systemInfo.tempDir}/${fileName}`);
-    FileSystem.writeDocument(temFile, '');
+    const temFile = this.resolvePath(`${this.systemInfo.tempDir}/${fileName}`);
+    this.writeDocument(temFile, '');
     return temFile;
   }
 
@@ -65,10 +66,7 @@ export class FileSystem extends TsJsUtilsApp {
     return this.systemInfo.platform === EPlatformType.darwin;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                                   STATIC                                   */
-  /* -------------------------------------------------------------------------- */
-  static getFileInfo(file: string, validExt?: string[]): Response<IFileInfo> {
+  getFileInfo(file: string, validExt?: string[]): Response<IFileInfo> {
     const fileExt = path.extname(file);
     const isExt = (): boolean => {
       if (!validExt) {
@@ -93,7 +91,7 @@ export class FileSystem extends TsJsUtilsApp {
       basenameWithoutExtension: '',
       isExtension: isExt,
     }).build();
-    if (FileSystem.fileExist(file)) {
+    if (this.fileExist(file)) {
       response.data.basename = path.basename(file);
       response.data.dirname = path.dirname(file);
       response.data.basenameWithoutExtension = response.data.basename.replace(response.data.extension, '');
@@ -106,8 +104,8 @@ export class FileSystem extends TsJsUtilsApp {
     return response;
   }
 
-  static getBase64File(file: string, type?: string): IBase64 {
-    if (FileSystem.fileExist(file)) {
+  getBase64File(file: string, type?: string): IBase64 {
+    if (this.fileExist(file)) {
       const base = fse.readFileSync(file)?.toString('base64');
       return {
         base: base,
@@ -117,47 +115,46 @@ export class FileSystem extends TsJsUtilsApp {
     return null;
   }
 
-  static resolvePath(strPath: string): string {
-    return Functions.isVscode ? FileSystem.getUriFileVs(strPath).fsPath : path.resolve(strPath);
+  resolvePath(strPath: string): string {
+    return path.resolve(strPath);
   }
 
-  static readJsonFile<T = any>(file: string): T {
-    if (FileSystem.fileExist(file)) {
+  readJsonFile<T = any>(file: string): T {
+    if (this.fileExist(file)) {
       try {
-        return Functions.convert<T>(fse.readJsonSync(file, { encoding: 'utf8', flag: 'r' }));
+        return this.functions.convert<T>(fse.readJsonSync(file, { encoding: 'utf8', flag: 'r' }));
       } catch (error) {
-        const logger = new Logger();
-        logger.error(error?.message);
+        this.logger.error(error?.message);
       }
     }
     return null;
   }
 
-  static readDocument(file: string): string {
-    if (FileSystem.fileExist(file)) {
+  readDocument(file: string): string {
+    if (this.fileExist(file)) {
       const data = fse.readFileSync(file, { encoding: 'utf8', flag: 'r' });
       return data.toString();
     }
     return null;
   }
 
-  static writeJsonFile(file: string, data: any, spaces?: string | number) {
+  writeJsonFile(file: string, data: any, spaces?: string | number) {
     spaces = spaces ? spaces : 4;
     fse.writeJsonSync(file, data, { encoding: 'utf8', flag: 'w', spaces: spaces });
   }
 
-  static writeDocument(file: string, data: any) {
+  writeDocument(file: string, data: any) {
     fse.writeFileSync(file, data, { encoding: 'utf8', flag: 'w' });
   }
 
-  static moveFile(src: string, dest: string, overwrite: boolean) {
-    if (FileSystem.fileExist(src)) {
+  moveFile(src: string, dest: string, overwrite: boolean) {
+    if (this.fileExist(src)) {
       fse.moveSync(src, dest, { overwrite: overwrite });
     }
   }
 
-  static fileType(file: string): EFileType {
-    if (FileSystem.fileExist(file)) {
+  fileType(file: string): EFileType {
+    if (this.fileExist(file)) {
       if (fse.statSync(file).isDirectory()) return EFileType.directory;
       else if (fse.statSync(file).isFile()) return EFileType.file;
       else if (fse.statSync(file).isSymbolicLink()) return EFileType.symbolicLink;
@@ -165,32 +162,32 @@ export class FileSystem extends TsJsUtilsApp {
     return EFileType.none;
   }
 
-  static fileExist(file: string): boolean {
+  fileExist(file: string): boolean {
     return fse.existsSync(file);
   }
 
-  static createDir(dir: string) {
-    if (!FileSystem.fileExist(dir)) {
+  createDir(dir: string) {
+    if (!this.fileExist(dir)) {
       fse.mkdirSync(dir, { recursive: true });
     }
   }
 
-  static copyDir(src: string, dest: string, overwrite: boolean) {
-    if (FileSystem.fileExist(src)) {
+  copyDir(src: string, dest: string, overwrite: boolean) {
+    if (this.fileExist(src)) {
       fse.copySync(src, dest, { recursive: true, overwrite: overwrite });
     }
   }
 
-  static deleteFile(file: string, isDir?: boolean): boolean {
-    if (FileSystem.fileExist(file)) {
+  deleteFile(file: string, isDir?: boolean): boolean {
+    if (this.fileExist(file)) {
       if (!isDir) fse.removeSync(file);
       else fse.rmdirSync(file);
-      return FileSystem.fileExist(file) ? false : true;
+      return this.fileExist(file) ? false : true;
     }
     return true;
   }
 
-  static isValidIP(ip: string): boolean {
+  isValidIP(ip: string): boolean {
     if (net.isIPv4(ip)) {
       return true;
     }
@@ -200,64 +197,36 @@ export class FileSystem extends TsJsUtilsApp {
     return false;
   }
 
-  static getCurrentDir(): string {
+  getCurrentDir(): string {
     return process.cwd();
   }
 
-  static getScriptDir(): string {
+  getScriptDir(): string {
     return __dirname;
   }
 
-  static readDir(dir: string): string[] {
+  readDir(dir: string): string[] {
     let allFiles: string[] = [];
-    if (FileSystem.fileExist(dir)) {
+    if (this.fileExist(dir)) {
       allFiles = fse.readdirSync(dir);
     }
     return allFiles;
   }
 
-  static readDirRecursive(dir: string, dirInfo?: IDirectoryInfo): IDirectoryInfo {
+  readDirRecursive(dir: string, dirInfo?: IDirectoryInfo): IDirectoryInfo {
     dirInfo = dirInfo || {
       files: [],
       directories: [],
     };
-    FileSystem.readDir(dir).forEach((file) => {
-      const fileInfo = FileSystem.resolvePath(dir + '/' + file);
-      if (FileSystem.fileType(fileInfo) === EFileType.directory) {
+    this.readDir(dir).forEach((file) => {
+      const fileInfo = this.resolvePath(dir + '/' + file);
+      if (this.fileType(fileInfo) === EFileType.directory) {
         dirInfo.directories.push(fileInfo);
-        dirInfo = FileSystem.readDirRecursive(fileInfo, dirInfo);
+        dirInfo = this.readDirRecursive(fileInfo, dirInfo);
       } else {
         dirInfo.files.push(path.join(dir, '/', file));
       }
     });
     return dirInfo;
-  }
-
-  static getUriFileVs(file: string): Uri {
-    return Uri.file(file);
-  }
-
-  static getActiveTextEditorFileVs(): Response<IFileInfo> {
-    return FileSystem.getFileInfo(window.activeTextEditor?.document.fileName);
-  }
-
-  static getWorkspaceDirVs(name?: string): WorkspaceFolder | WorkspaceFolder[] | undefined {
-    const workspaceFolders = workspace.workspaceFolders;
-    if (workspaceFolders) {
-      const folders = Functions.copyJsonData<WorkspaceFolder[]>(workspaceFolders);
-      if (name) {
-        return folders.find((x: { name: string; }) => x.name === name);
-      }
-      return folders;
-    }
-    return undefined;
-  }
-
-  static getWorkspaceRootPathVs(): string {
-    const dirs = FileSystem.getWorkspaceDirVs();
-    if (dirs && dirs[0]) {
-      return dirs[0].uri.fsPath;
-    }
-    return '';
   }
 }

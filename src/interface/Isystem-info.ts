@@ -1,4 +1,4 @@
-import { EPlatformType } from './../enum/platform-type';
+import { EPlatformType } from '../enum/Eplatform-type';
 import * as os from 'os';
 
 export interface ISystemInfo {

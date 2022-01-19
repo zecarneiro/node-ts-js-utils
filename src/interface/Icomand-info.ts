@@ -1,4 +1,4 @@
-import { EShellType } from '../enum/shell-type';
+import { EShellType } from '../enum/Eshell-type';
 export interface ICommandInfo {
     cmd: string,
     args?: string[],

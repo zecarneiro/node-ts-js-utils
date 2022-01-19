@@ -1,14 +1,14 @@
-import { IErrorData } from './../interface/error-data';
-import { Logger } from './../lib/logger';
-import { FileSystem } from './../lib/file-system';
+import { Logger } from './../lib/global/logger';
+import { FileSystem } from './../lib/global/file-system';
+import { IErrorData } from '../interface/Ierror-data';
 import { chalk } from 'zx';
 
 export class Response<T> {
   private fileSystem: FileSystem;
   private logger: Logger;
   constructor() {
-    this.logger = new Logger();
-    this.fileSystem = new FileSystem();
+    this.logger = global.nodeTsJsUtils.logger;
+    this.fileSystem = global.nodeTsJsUtils.fileSystem;
   }
   private _data: T | any;
   get data(): T {

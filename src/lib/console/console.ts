@@ -1,21 +1,16 @@
-import { EFileType } from './../enum/file-type';
-import { IVsRegisterCmd } from './../interface/vs-register-cmd';
+import { EFileType } from '../../enum/Efile-type';
 import { Shell } from './shell';
-import { Functions } from './functions';
-import { Response } from './../entities/response';
+import { Response } from '../../entities/response';
 import { spawnSync, SpawnSyncOptions } from 'child_process';
-import { ICommandInfo } from '../interface/comand-info';
-import { EPlatformType } from '../enum/platform-type';
-import { EErrorMessages } from '../enum/error-messages';
-import { FileSystem } from './file-system';
-import { TsJsUtilsApp } from '../ts-js-utils-app';
+import { ICommandInfo } from '../../interface/Icomand-info';
+import { EPlatformType } from '../../enum/Eplatform-type';
+import { EErrorMessages } from '../../enum/Eerror-messages';
+import { ProcessorUtils } from '../../processor-utils';
 import { $, question } from 'zx';
 import * as PromptSync from 'prompt-sync';
-import { commands, Terminal, TerminalOptions, window } from 'vscode';
 
-export class Console extends TsJsUtilsApp {
+export class Console extends ProcessorUtils {
   constructor(
-    protected fileSystem: FileSystem,
   ) {
     super();
   }
@@ -24,7 +19,7 @@ export class Console extends TsJsUtilsApp {
   /*                                   PRIVATE                                  */
   /* -------------------------------------------------------------------------- */
   private _prompt: PromptSync.Prompt | undefined;
-  private _shell: Shell|undefined;
+  private _shell: Shell;
   private get prompt(): PromptSync.Prompt {
     if (!this._prompt) {
       // eslint-disable-next-line new-cap
@@ -37,7 +32,20 @@ export class Console extends TsJsUtilsApp {
     command.isThrow = command.isThrow === undefined ? true : command.isThrow;
     return command;
   }
-  private getChangeDirCmd(cwd?: string): string {
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  PROTECTED                                 */
+  /* -------------------------------------------------------------------------- */
+  protected execSpawnSync(cmd: string, args?: string[], options?: SpawnSyncOptions): Response<string> {
+    const response = new Response<string>();
+    const result = spawnSync(cmd, args, options);
+    response.data = result.stdout?.toString().trim();
+    response.errorMsg = result.stderr?.toString();
+    response.error = result.error;
+    response.status = result.status;
+    return response;
+  }
+  protected getChangeDirCmd(cwd?: string): string {
     if (this.fileSystem.isLinux || this.fileSystem.isWindows || this.fileSystem.isOsx) {
       return `cd ${cwd}`;
     }
@@ -49,7 +57,7 @@ export class Console extends TsJsUtilsApp {
   /* -------------------------------------------------------------------------- */
   get shell(): Shell {
     if (!this._shell) {
-      this._shell = new Shell(this.fileSystem, this.projectName);
+      this._shell = new Shell(this);
     }
     return this._shell;
   }
@@ -58,7 +66,7 @@ export class Console extends TsJsUtilsApp {
     command = this.setDefaultCommandInfo(command);
     if (command.verbose) {
       this.logger.emptyLine();
-      this.logger.prompt(Console.getCommandWithArgs(command));
+      this.logger.prompt(this.getCommandWithArgs(command));
     }
     const options: SpawnSyncOptions = {
       cwd: command.cwd,
@@ -67,7 +75,7 @@ export class Console extends TsJsUtilsApp {
       shell: this.shell.getShell(command.shellType),
       stdio: 'inherit',
     };
-    const response = Console.execSpawnSync(command.cmd, command.args, options);
+    const response = this.execSpawnSync(command.cmd, command.args, options);
     if (command.realTimeSuccessCode && command.realTimeSuccessCode !== response.status) {
       response.errorMsg = 'Exit with error code: ' + response.status;
     }
@@ -78,7 +86,7 @@ export class Console extends TsJsUtilsApp {
     command = this.setDefaultCommandInfo(command);
     if (command.verbose) {
       this.logger.emptyLine();
-      this.logger.prompt(Console.getCommandWithArgs(command));
+      this.logger.prompt(this.getCommandWithArgs(command));
     }
     const options: SpawnSyncOptions = {
       cwd: command.cwd,
@@ -86,7 +94,7 @@ export class Console extends TsJsUtilsApp {
       env: command.env as NodeJS.ProcessEnv,
       shell: this.shell.getShell(command.shellType),
     };
-    const result = Console.execSpawnSync(command.cmd, command.args, options);
+    const result = this.execSpawnSync(command.cmd, command.args, options);
     if (command.verbose) {
       result.print();
     }
@@ -94,7 +102,7 @@ export class Console extends TsJsUtilsApp {
   }
 
   async exec(command: ICommandInfo): Promise<Response<string>> {
-    const cmd = Console.getCommandWithArgs(command);
+    const cmd = this.getCommandWithArgs(command);
     command = this.setDefaultCommandInfo(command);
     if (command.verbose) {
       this.logger.emptyLine();
@@ -106,7 +114,7 @@ export class Console extends TsJsUtilsApp {
     $.shell = this.shell.getShell(command.shellType);
     const quote = $.quote;
     $.quote = (val: any) => val;
-    if (command.cwd && FileSystem.fileExist(command.cwd) && FileSystem.fileType(command.cwd) === EFileType.directory) {
+    if (command.cwd && this.fileSystem.fileExist(command.cwd) && this.fileSystem.fileType(command.cwd) === EFileType.directory) {
       await $`${this.getChangeDirCmd(command.cwd)}`;
     }
     const result = await $`${cmd}`;
@@ -115,20 +123,7 @@ export class Console extends TsJsUtilsApp {
     response.data = response.data?.trim();
     response.errorMsg = result.stderr?.trim();
     response.status = result.exitCode;
-    if (command.verbose && Functions.isVscode) {
-      response.print();
-    }
     return Response.process(response, command.isThrow);
-  }
-
-  execVs(command: ICommandInfo) {
-    const cmd = Console.getCommandWithArgs(command);
-    const terminal = this.shell.getShellVs(command.shellType);
-    if (command.cwd) {
-      terminal.term?.sendText(`cd "${command.cwd}"`);
-    }
-    terminal.term?.show(true);
-    terminal.term?.sendText(cmd);
   }
 
   readKeyboardSync(questionData: string, choices?: string[], canChoiceBeNull?: boolean): string {
@@ -140,7 +135,7 @@ export class Console extends TsJsUtilsApp {
       choices.push(dataNull);
     }
     if (choices.length > 0 && !choices.includes(result)) {
-      choices = Functions.removeElements(choices, dataNull);
+      choices = this.functions.removeElements(choices, dataNull);
       this.logger.error(`Please insert only (${choices.toString()})`);
       result = this.readKeyboardSync(questionData, choices, canChoiceBeNull);
     }
@@ -202,29 +197,7 @@ export class Console extends TsJsUtilsApp {
     return commandSequency;
   }
 
-  createTerminalVs(options: TerminalOptions): Terminal | undefined {
-    options['shellPath'] = !options.shellPath ? this.shell.getShell() : options.shellPath;
-    options['name'] = this.projectName + ': ' + options?.name;
-    let terminal = Console.getActiveTerminalVs(options.name);
-    if (!terminal) {
-      terminal = window.createTerminal(options);
-    }
-    return terminal;
-  }
-
-  registerCommandVs(data: IVsRegisterCmd[]) {
-    data.forEach((value) => {
-      if (value.callback) {
-        const register = commands.registerCommand(value.command, value.callback?.caller, value.callback?.thisArg);
-        this.contextVs?.subscriptions.push(register);
-      }
-    });
-  }
-
-  /* -------------------------------------------------------------------------- */
-  /*                                   STATIC                                   */
-  /* -------------------------------------------------------------------------- */
-  static setEnv(key: string, value: string): boolean {
+  setEnv(key: string, value: string): boolean {
     if (key && key.length > 0) {
       if (!process.env[key] || (process.env[key] && process.env[key] !== value)) {
         process.env[key] = value;
@@ -234,15 +207,15 @@ export class Console extends TsJsUtilsApp {
     return false;
   }
 
-  static getEnv(key: string): string | undefined {
+  getEnv(key: string): string | undefined {
     return process.env[key] ? process.env[key] : undefined;
   }
 
-  static getAllEnv(): NodeJS.ProcessEnv {
-    return Functions.copyJsonData(process.env);
+  getAllEnv(): NodeJS.ProcessEnv {
+    return this.functions.copyJsonData(process.env);
   }
 
-  static deleteEnv(key: string): boolean {
+  deleteEnv(key: string): boolean {
     if (process.env[key]) {
       process.env[key] = undefined;
       return true;
@@ -250,7 +223,7 @@ export class Console extends TsJsUtilsApp {
     return false;
   }
 
-  static getCommandWithArgs(command: ICommandInfo): string {
+  getCommandWithArgs(command: ICommandInfo): string {
     let info: string = command.cmd;
     command.args?.forEach((arg) => {
       info += ` ${arg}`;
@@ -258,47 +231,23 @@ export class Console extends TsJsUtilsApp {
     return info;
   }
 
-  static exitConsoleProcess(code?: number) {
+  exitConsoleProcess(code?: number) {
     process.exit(code);
   }
 
-  static execSpawnSync(cmd: string, args?: string[], options?: SpawnSyncOptions): Response<string> {
-    const response = new Response<string>();
-    const result = spawnSync(cmd, args, options);
-    response.data = result.stdout?.toString().trim();
-    response.errorMsg = result.stderr?.toString();
-    response.error = result.error;
-    response.status = result.status;
-    return response;
-  }
-
-  static findCommand(cmd: string, isThrow: boolean = true, encoding?: BufferEncoding): Response<string> {
-    const fileSystem = new FileSystem();
-    const shell = new Shell(fileSystem, global.nodeVs.projectName);
+  findCommand(cmd: string, isThrow: boolean = true, encoding?: BufferEncoding): Response<string> {
     let response = new Response<string>();
     const options: SpawnSyncOptions = {
       encoding: encoding ? encoding : 'utf8',
-      shell: shell.getShell(),
+      shell: this.shell.getShell(),
     };
-    if (fileSystem.isLinux) {
-      response = Console.execSpawnSync('which', [cmd], options);
-    } else if (fileSystem.isWindows) {
-      response = Console.execSpawnSync('where.exe', [cmd], options);
+    if (this.fileSystem.isLinux) {
+      response = this.execSpawnSync('which', [cmd], options);
+    } else if (this.fileSystem.isWindows) {
+      response = this.execSpawnSync('where.exe', [cmd], options);
     } else {
       response.error = new Error(EErrorMessages.invalidPlatform);
     }
     return Response.process(response, isThrow);
-  }
-
-  static getActiveTerminalVs(name: string): Terminal | undefined {
-    return window.terminals.find((t) => t.name === name);
-  }
-
-  static async execCommandVs<T>(command: string, ...rest: any[]): Promise<T | undefined> {
-    return await commands.executeCommand<T>(command, rest);
-  }
-
-  static async closeTerminalVs(processId: number) {
-    await Console.execCommandVs('workbench.action.terminal.kill', processId);
   }
 }
