@@ -1,25 +1,20 @@
-import { Functions } from './functions';
-import { ResponseBuilder } from '../../entities/response';
-import { EFileType } from '../../enum/Efile-type';
-import { ISystemInfo } from '../../interface/Isystem-info';
-import { IFileInfo } from '../../interface/Ifile-info';
-import { IBase64 } from '../../interface/Ibase64';
+import { Functions } from './global/functions';
+import { ResponseBuilder } from '../entities/response';
+import { EFileType } from '../enum/Efile-type';
+import { ISystemInfo } from '../interface/Isystem-info';
+import { IFileInfo } from '../interface/Ifile-info';
+import { IBase64 } from '../interface/Ibase64';
 import * as fse from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import * as net from 'net';
-import { Response } from '../../entities/response';
-import { IDirectoryInfo } from '../../interface/Idirectory-info';
-import { EPlatformType } from '../../enum/Eplatform-type';
-import { Logger } from './logger';
+import { Response } from '../entities/response';
+import { IDirectoryInfo } from '../interface/Idirectory-info';
+import { EPlatformType } from '../enum/Eplatform-type';
 
 export class FileSystem {
-  protected functions: Functions;
-  protected logger: Logger;
-  constructor() {
-    this.functions = global.nodeTsJsUtils.functions;
-    this.logger = global.nodeTsJsUtils.logger;
-  }
+  constructor(
+  ) {}
 
   /* -------------------------------------------------------------------------- */
   /*                                   PRIVATE                                  */
@@ -119,15 +114,16 @@ export class FileSystem {
     return path.resolve(strPath);
   }
 
-  readJsonFile<T = any>(file: string): T {
+  readJsonFile<T = any>(file: string): Response<T> {
+    const response = new Response<T>();
     if (this.fileExist(file)) {
       try {
-        return this.functions.convert<T>(fse.readJsonSync(file, { encoding: 'utf8', flag: 'r' }));
+        response.data = Functions.convert<T>(fse.readJsonSync(file, { encoding: 'utf8', flag: 'r' }));
       } catch (error) {
-        this.logger.error(error?.message);
+        response.error = error;
       }
     }
-    return null;
+    return response;
   }
 
   readDocument(file: string): string {

@@ -1,14 +1,14 @@
+import { FileSystem } from './file-system';
 import { Console } from './console/console';
 import { EShellType } from '../enum/Eshell-type';
 import { IJavaTest } from '../interface/Ijava-test';
 import { IJavaVm } from '../interface/Ijava-vm';
-import { ProcessorUtils } from '../processor-utils';
 
-export class Java extends ProcessorUtils {
+export class Java {
   constructor(
     private console: Console,
+    private fileSystem: FileSystem,
   ) {
-    super();
   }
 
   /* -------------------------------------------------------------------------- */

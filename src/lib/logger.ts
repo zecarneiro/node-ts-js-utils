@@ -1,17 +1,12 @@
-import { Functions } from './functions';
-import { FileSystem } from './file-system';
-import { ELoggerType } from '../../enum/Elogger-type';
-import { EPrintType } from '../../enum/Eprint-type';
+import { Functions } from './global/functions';
+import { ELoggerType } from '../enum/Elogger-type';
+import { EPrintType } from '../enum/Eprint-type';
 import { chalk } from 'zx';
 const readline = require('readline');
+import * as os from 'os';
 
 export class Logger {
-  protected fileSystem: FileSystem;
-  protected functions: Functions;
-  constructor() {
-    this.functions = global.nodeTsJsUtils.functions;
-    this.fileSystem = global.nodeTsJsUtils.fileSystem;
-  }
+  constructor() {}
 
   /* -------------------------------------------------------------------------- */
   /*                                  PROTECTED                                 */
@@ -34,7 +29,7 @@ export class Logger {
     return !data ? '---' : data;
   }
   protected processPrefix(type: ELoggerType): string {
-    let data = this.prefix + this.fileSystem.systemInfo.eol;
+    let data = this.prefix + os.EOL;
       switch (type) {
         case ELoggerType.warn:
           data = chalk.yellow(`WARNING: ${data}`);
@@ -61,14 +56,14 @@ export class Logger {
   }
   protected printData(type: ELoggerType, data: any, printType?: EPrintType) {
     if (data) {
-      let eol = this.fileSystem.systemInfo.eol;
+      let eol = os.EOL;
       if (printType === EPrintType.sameLine) {
         eol = '';
       } else if (printType === EPrintType.carriageReturn) {
         eol = '';
         this.clearLine();
       }
-      process.stdout.write(`${this.processPrefix(type)}${this.functions.objectToString(data)}${eol}`);
+      process.stdout.write(`${this.processPrefix(type)}${Functions.objectToString(data)}${eol}`);
     }
   }
 

@@ -1,3 +1,5 @@
+import { Functions } from './../global/functions';
+import { FileSystem } from './../file-system';
 import { EFileType } from '../../enum/Efile-type';
 import { Shell } from './shell';
 import { Response } from '../../entities/response';
@@ -5,15 +7,15 @@ import { spawnSync, SpawnSyncOptions } from 'child_process';
 import { ICommandInfo } from '../../interface/Icomand-info';
 import { EPlatformType } from '../../enum/Eplatform-type';
 import { EErrorMessages } from '../../enum/Eerror-messages';
-import { ProcessorUtils } from '../../processor-utils';
 import { $, question } from 'zx';
 import * as PromptSync from 'prompt-sync';
+import { Logger } from '../logger';
 
-export class Console extends ProcessorUtils {
+export class Console {
   constructor(
-  ) {
-    super();
-  }
+    private logger: Logger,
+    private fileSystem: FileSystem,
+  ) {}
 
   /* -------------------------------------------------------------------------- */
   /*                                   PRIVATE                                  */
@@ -57,7 +59,7 @@ export class Console extends ProcessorUtils {
   /* -------------------------------------------------------------------------- */
   get shell(): Shell {
     if (!this._shell) {
-      this._shell = new Shell(this);
+      this._shell = new Shell(this, this.fileSystem);
     }
     return this._shell;
   }
@@ -135,7 +137,7 @@ export class Console extends ProcessorUtils {
       choices.push(dataNull);
     }
     if (choices.length > 0 && !choices.includes(result)) {
-      choices = this.functions.removeElements(choices, dataNull);
+      choices = Functions.removeElements(choices, dataNull);
       this.logger.error(`Please insert only (${choices.toString()})`);
       result = this.readKeyboardSync(questionData, choices, canChoiceBeNull);
     }
@@ -212,7 +214,7 @@ export class Console extends ProcessorUtils {
   }
 
   getAllEnv(): NodeJS.ProcessEnv {
-    return this.functions.copyJsonData(process.env);
+    return Functions.copyJsonData(process.env);
   }
 
   deleteEnv(key: string): boolean {

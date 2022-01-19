@@ -1,5 +1,5 @@
-import { Logger } from './../lib/global/logger';
-import { FileSystem } from './../lib/global/file-system';
+import { Logger } from '../lib/logger';
+import { FileSystem } from '../lib/file-system';
 import { IErrorData } from '../interface/Ierror-data';
 import { chalk } from 'zx';
 

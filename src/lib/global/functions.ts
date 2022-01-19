@@ -1,28 +1,25 @@
 import { EFunctionsProcessType } from '../../enum/Efunctions-process-type';
 import { Response, ResponseBuilder } from '../../entities/response';
 import { IStringReplace } from '../../interface/Istring-replace';
-import { ProcessorUtils } from '../../processor-utils';
 import * as moment from 'moment';
+import { IGenericObject } from '../../interface/Igeneric-object';
 
-export class Functions extends ProcessorUtils {
-  constructor() {
-    super();
-  }
-  get methodName(): Response<string> {
+export class Functions {
+  static get methodName(): Response<string> {
     const err = new Error();
     const errArr: string[] = err.stack ? err.stack?.split('\n') : [];
     const nameArr = /at \w+\.(\w+)/.exec(errArr.length >= 3 ? errArr[2] : '');
     return new ResponseBuilder<string>().withData(nameArr && nameArr.length >= 2 ? nameArr[1] : '').build(); // we want the 2nd method in the call stack
   }
 
-  get callerName(): Response<string> {
+  static get callerName(): Response<string> {
     const err = new Error();
     const errArr: string[] = err.stack ? err.stack?.split('\n') : [];
     const nameArr = /at \w+\.(\w+)/.exec(errArr.length >= 4 ? errArr[3] : '');
     return new ResponseBuilder<string>().withData(nameArr && nameArr.length >= 2 ? nameArr[1] : '').build(); // we want the 3nd method in the call stack
   }
 
-  async run<T>(caller: (...argsCaller: any[]) => any, args?: any[], thisArg?: any, isThrow?: boolean): Promise<Response<T>> {
+  static async run<T>(caller: (...argsCaller: any[]) => any, args?: any[], thisArg?: any, isThrow?: boolean): Promise<Response<T>> {
     const result = new Response<T>();
     try {
       args = args ? args : [];
@@ -32,12 +29,12 @@ export class Functions extends ProcessorUtils {
       if (isThrow) {
         throw result.error;
       }
-      result.data = this.convert<T>({});
+      result.data = Functions.convert<T>({});
     }
     return result;
   }
 
-  runSync<T>(caller: (...argsCaller: any[]) => any, args?: any[], thisArg?: any, isThrow?: boolean): Response<T> {
+  static runSync<T>(caller: (...argsCaller: any[]) => any, args?: any[], thisArg?: any, isThrow?: boolean): Response<T> {
     const result = new Response<T>();
     try {
       args = args ? args : [];
@@ -52,7 +49,7 @@ export class Functions extends ProcessorUtils {
     return result;
   }
 
-  objectToString(data: any, space: number = 2, removeBreakLine?: boolean): string {
+  static objectToString(data: any, space: number = 2, removeBreakLine?: boolean): string {
     let value: string;
     if (data instanceof Object) {
       value = space === 0 ? JSON.stringify(data) : JSON.stringify(data, null, space);
@@ -67,7 +64,7 @@ export class Functions extends ProcessorUtils {
     return value;
   }
 
-  isJsonParsable(jsonStr: string): boolean {
+  static isJsonParsable(jsonStr: string): boolean {
     try {
       JSON.parse(jsonStr);
     } catch (e) {
@@ -76,64 +73,64 @@ export class Functions extends ProcessorUtils {
     return true;
   }
 
-  formatDate(dateVal?: Date, format?: string): string {
+  static formatDate(dateVal?: Date, format?: string): string {
     dateVal = dateVal ? dateVal : new Date;
     format = format ? format : 'DD-MMM-YYYY HH:mm:ss';
     return (moment(dateVal)).format(format);
   }
 
-  getEnumValueName(value: any, typeEnum: any): string {
+  static getEnumValueName(value: any, typeEnum: any): string {
     if (value && typeEnum && typeEnum[value]) {
       return typeEnum[value] as string;
     }
     return '';
   }
 
-  stringToObject<T>(data: string): T {
+  static stringToObject<T>(data: string): T {
     if (this.isJsonParsable(data)) {
       return JSON.parse(data) as T;
     }
     return {} as T;
   }
 
-  copyJsonData<T>(data: any): T {
+  static copyJsonData<T>(data: any): T {
     return this.stringToObject<T>(this.objectToString(data, 0));
   }
 
-  stringReplaceAll(data: string, keysToReplace?: IStringReplace[]): string {
+  static stringReplaceAll(data: string, keysToReplace?: IStringReplace[]): string {
     keysToReplace?.forEach((value) => {
       data = data.split(value.search).join(value.toReplace);
     });
     return data;
   }
 
-  toLowerUpperCase(value: string, isLower?: boolean): string {
+  static toLowerUpperCase(value: string, isLower?: boolean): string {
     if (!value) {
       return value;
     }
     return isLower ? value.toLowerCase() : value.toUpperCase();
   }
 
-  createGenericType<T>(TCreator: new (...args: []) => T): T {
+  static createGenericType<T>(TCreator: new (...args: []) => T): T {
     return new TCreator();
   }
 
-  delay<T>(ms: number): Promise<T> {
+  static delay<T>(ms: number): Promise<T> {
     return new Promise<T>((resolve) => setTimeout(resolve, ms));
   }
 
-  getEnumData(data: any, isKeys?: boolean): any[] {
+  static getEnumData(data: any, isKeys?: boolean): any[] {
     if (isKeys) {
       return Object.keys(data);
     }
     return Object.values(data);
   }
 
-  getClassName(thisArg: any): string {
+  static getClassName(thisArg: any): string {
     return thisArg.constructor.name;
   }
 
-  removeLastCharacter(data: string, characters: string[]): string {
+  static removeLastCharacter(data: string, characters: string[]): string {
     const lastCharacter = data.substr(data.length - 1);
     if (characters.includes(lastCharacter)) {
       data = data.slice(0, data.length - 1);
@@ -141,7 +138,7 @@ export class Functions extends ProcessorUtils {
     return data;
   }
 
-  removeDuplicatesValues<T>(array: Array<T>): Array<T> {
+  static removeDuplicatesValues<T>(array: Array<T>): Array<T> {
     if (array instanceof Array) {
       const newArray: any[] = [];
       array.forEach((value) => {
@@ -161,7 +158,7 @@ export class Functions extends ProcessorUtils {
     return array;
   }
 
-  removeElements<T>(array: Array<T>, element: T): Array<T> {
+  static removeElements<T>(array: Array<T>, element: T): Array<T> {
     const newArr: Array<T> = [];
     if (array instanceof Array) {
       array.forEach((val) => {
@@ -173,16 +170,16 @@ export class Functions extends ProcessorUtils {
     return newArr;
   }
 
-  isAsyncFunction(caller: any): boolean {
+  static isAsyncFunction(caller: any): boolean {
     const asyncFunction = (async () => {/* Generic is intentional */}).constructor;
     return caller instanceof asyncFunction;
   }
 
-  sleep(ms: number): Promise<void> {
+  static sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  sleepSync(ms: number) {
+  static sleepSync(ms: number) {
     const start = new Date().getTime();
     for (let i = 0; i < 1e7; i++) {
       const current = new Date().getTime();
@@ -192,7 +189,7 @@ export class Functions extends ProcessorUtils {
     }
   }
 
-  getErrorObjectData(error?: Error): any {
+  static getErrorObjectData(error?: Error): any {
     let response;
     if (error) {
       try {
@@ -204,40 +201,53 @@ export class Functions extends ProcessorUtils {
     return response;
   }
 
-  convert<T>(value: any): T {
+  static convert<T>(value: any): T {
     return value as T;
   }
 
-  getMessageSeparator(callerName?: string): string {
+  static getMessageSeparator(callerName?: string): string {
     const dateVal = this.formatDate();
     return (callerName && callerName.length > 0) ?
       `\n------ ${callerName}: ${dateVal} ------\n` :
       `\n------ ${dateVal} ------\n`;
   }
 
-  getGlobalData<T>(key: string, isOther?: boolean): T {
-    if (isOther) {
-      return global.nodeTsJsUtils.others[key] ? global.nodeTsJsUtils.others[key] : undefined;
+  static getGlobalDataValue<T>(key: string): T {
+    return Functions.getAllGlobalData().find((val) => val.key === key)?.value as T;
+  }
+
+  static setGlobalData(key: string, value: any) {
+    const allData = Functions.getAllGlobalData();
+    const index = allData.findIndex((val) => val.key === key);
+    if (index > -1) {
+      allData[index].value = value;
+    } else {
+      allData.push({ key: key, value: value });
     }
-    return global.nodeTsJsUtils[key] ? global.nodeTsJsUtils[key] : undefined;
+    global.nodeTsJsUtils = allData;
   }
 
-  setGlobalData(key: string, value: any) {
-    global.nodeTsJsUtils.others[key] = value;
+  static getAllGlobalData(): IGenericObject<any>[] {
+    let data: IGenericObject<any>[] = Functions.convert<IGenericObject<any>[]>(global.nodeTsJsUtils);
+    if (!data) {
+      data = [];
+      global.nodeTsJsUtils = data;
+    }
+    return data;
   }
 
-  getTimestamp(date?: Date) {
+  static getTimestamp(date?: Date) {
     const dateNumber = date ? date.getTime() : new Date().getTime();
     return Math.floor(dateNumber / 1000);
   }
 
-  isTimePassed(loadTime: Date, checkTimeSeconds: number): boolean {
+  static isTimePassed(loadTime: Date, checkTimeSeconds: number): boolean {
     const load = this.getTimestamp(loadTime);
     const currentTime = this.getTimestamp();
     return (currentTime - load) >= checkTimeSeconds;
   }
 
-  delDataFromArray<T>(data: T[], toRemove: T[]): T[] {
+  static delDataFromArray<T>(data: T[], toRemove: T[]): T[] {
     for (let i = 0; i < data.length; i++) {
       if (toRemove.includes(data[i])) {
         data.splice(i, 1);
@@ -247,7 +257,7 @@ export class Functions extends ProcessorUtils {
     return data;
   }
 
-  delDataWithCondFromArray<T>(data: T[], condition: (val: T) => boolean): T[] {
+  static delDataWithCondFromArray<T>(data: T[], condition: (val: T) => boolean): T[] {
     for (let i = 0; i < data.length; i++) {
       if (condition(data[i])) {
         data.splice(i, 1);
@@ -257,11 +267,11 @@ export class Functions extends ProcessorUtils {
     return data;
   }
 
-  float2int(value): number {
+  static float2int(value): number {
     return value | 0;
   }
 
-  getFilenameFromUrl(url: string): string {
+  static getFilenameFromUrl(url: string): string {
     if (url) {
       const m = url.toString().match(/.*\/(.+?)\./);
       if (m && m.length > 1) {
@@ -271,7 +281,7 @@ export class Functions extends ProcessorUtils {
     return '';
   }
 
-  callbackProcess<T>(callback: (...args: any[]) => T, thisArg: any, type: EFunctionsProcessType, ...args: any): T {
+  static callbackProcess<T>(callback: (...args: any[]) => T, thisArg: any, type: EFunctionsProcessType, ...args: any): T {
     switch (type) {
       case EFunctionsProcessType.apply:
         return callback.apply(thisArg, ...args);

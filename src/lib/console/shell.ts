@@ -1,12 +1,11 @@
+import { FileSystem } from './../file-system';
 import { Console } from './console';
 import { EShellType } from '../../enum/Eshell-type';
-import { ProcessorUtils } from '../../processor-utils';
-export class Shell extends ProcessorUtils {
+export class Shell {
   constructor(
     private console: Console,
-  ) {
-    super();
-  }
+    private fileSystem: FileSystem,
+  ) { }
 
   private get bash(): string {
     if (this.fileSystem.isLinux) {

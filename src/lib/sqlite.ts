@@ -1,17 +1,18 @@
+import { FileSystem } from './file-system';
+import { Functions } from './global/functions';
 import { Console } from './console/console';
 import { Response, ResponseBuilder } from './../entities/response';
 import { ESqliteOutputFormat } from '../enum/Esqlite-output-format';
 import { ISqliteOptions } from '../interface/Isqlite-options';
 import * as os from 'os';
-import { ProcessorUtils } from '../processor-utils';
 
-export class Sqlite extends ProcessorUtils {
+export class Sqlite {
   private alreadyCheckExecFile = false;
   constructor(
+    private projectName: string,
     private console: Console,
-  ) {
-    super();
-  }
+    private fileSystem: FileSystem,
+  ) {}
 
   /* -------------------------------------------------------------------------- */
   /*                                   PRIVATE                                  */
@@ -21,7 +22,7 @@ export class Sqlite extends ProcessorUtils {
   private _fileSql: string;
   private get fileSql(): string {
     if (!this._fileSql) {
-      const file = this.functions.stringReplaceAll(`${this.projectName}_sqlite_cmds`, [{ search: ' ', toReplace: '' }]);
+      const file = Functions.stringReplaceAll(`${this.projectName}_sqlite_cmds`, [{ search: ' ', toReplace: '' }]);
       this._fileSql = this.fileSystem.resolvePath(`${this.fileSystem.systemInfo.tempDir}/${file}`);
     }
     return this._fileSql;
@@ -115,7 +116,7 @@ export class Sqlite extends ProcessorUtils {
     if (childProcess.hasError) {
       result.error = childProcess.error;
     }
-    result.data = this.functions.stringToObject<T>(childProcess.data);
+    result.data = Functions.stringToObject<T>(childProcess.data);
     return result;
   }
 }
