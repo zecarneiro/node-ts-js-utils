@@ -65,7 +65,7 @@ export class Response<T> {
       logger.log(this.data);
     }
     if (this.hasError) {
-      logger.error(this.error.message);
+      logger.error(this.error);
     }
     if (this.status) {
       logger.log(`Status: ${this.status}`);

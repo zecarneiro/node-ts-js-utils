@@ -134,7 +134,7 @@ export class Console {
     }
     if (choices.length > 0 && !choices.includes(result)) {
       choices = Functions.removeElements(choices, dataNull);
-      this.logger.error(`Please insert only (${choices.toString()})`);
+      this.logger.error(new Error(`Please insert only (${choices.toString()})`));
       result = this.readKeyboardSync(questionData, choices, canChoiceBeNull);
     }
     return result === dataNull ? null : result;
