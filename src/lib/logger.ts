@@ -82,9 +82,9 @@ export class Logger {
   }
 
   error(data: Error, printType?: EPrintType) {
-    this.printData(ELoggerType.error, data.name, printType);
-    this.printData(ELoggerType.error, data.message, printType);
-    this.printData(ELoggerType.error, data.stack, printType);
+    this.printData(ELoggerType.error, `Name: ${data.name}`, printType);
+    this.printData(ELoggerType.error, `Message: ${data.message}`, printType);
+    this.printData(ELoggerType.error, `Stack: ${data.stack}`, printType);
   }
 
   info(data: any, printType?: EPrintType) {
