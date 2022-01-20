@@ -7,31 +7,31 @@ import { ISqliteOptions } from '../interface/Isqlite-options';
 import * as os from 'os';
 
 export class Sqlite {
-  private alreadyCheckExecFile = false;
+  protected alreadyCheckExecFile = false;
   constructor(
-    private projectName: string,
-    private console: Console,
-    private fileSystem: FileSystem,
+    protected projectName: string,
+    protected console: Console,
+    protected fileSystem: FileSystem,
   ) {}
 
   /* -------------------------------------------------------------------------- */
-  /*                                   PRIVATE                                  */
+  /*                                  PROTECTED                                 */
   /* -------------------------------------------------------------------------- */
-  private _command: string|undefined;
+  protected _command: string|undefined;
 
-  private _fileSql: string;
-  private get fileSql(): string {
+  protected _fileSql: string;
+  protected get fileSql(): string {
     if (!this._fileSql) {
       const file = Functions.stringReplaceAll(`${this.projectName}_sqlite_cmds`, [{ search: ' ', toReplace: '' }]);
       this._fileSql = this.fileSystem.resolvePath(`${this.fileSystem.systemInfo.tempDir}/${file}`);
     }
     return this._fileSql;
   }
-  private set fileSql(val: string) {
+  protected set fileSql(val: string) {
     this._fileSql = val;
   }
 
-  private writeCommands(commands: string, isDelete: boolean) {
+  protected writeCommands(commands: string, isDelete: boolean) {
     if (isDelete) {
       this.fileSystem.deleteFile(this.fileSql);
       this._fileSql = null;
@@ -39,7 +39,7 @@ export class Sqlite {
     this.fileSystem.writeDocument(this.fileSql, commands);
   }
 
-  private getCommand(file: string, program: string): string {
+  protected getCommand(file: string, program: string): string {
     if (this.fileSystem.fileExist(file)) {
       if (this.fileSystem.isLinux) {
         return `"${program}" < "${file}"`;

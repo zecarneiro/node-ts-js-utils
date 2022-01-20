@@ -13,31 +13,27 @@ import { Logger } from '../logger';
 
 export class Console {
   constructor(
-    private logger: Logger,
-    private fileSystem: FileSystem,
+    protected logger: Logger,
+    protected fileSystem: FileSystem,
   ) {}
 
   /* -------------------------------------------------------------------------- */
-  /*                                   PRIVATE                                  */
+  /*                                  PROTECTED                                 */
   /* -------------------------------------------------------------------------- */
-  private _prompt: PromptSync.Prompt | undefined;
-  private _shell: Shell;
-  private get prompt(): PromptSync.Prompt {
+  protected _prompt: PromptSync.Prompt | undefined;
+  protected _shell: Shell;
+  protected get prompt(): PromptSync.Prompt {
     if (!this._prompt) {
       // eslint-disable-next-line new-cap
       this._prompt = PromptSync();
     }
     return this._prompt;
   }
-  private setDefaultCommandInfo(command: ICommandInfo): ICommandInfo {
+  protected setDefaultCommandInfo(command: ICommandInfo): ICommandInfo {
     command.verbose = command.verbose === undefined ? true : command.verbose;
     command.isThrow = command.isThrow === undefined ? true : command.isThrow;
     return command;
   }
-
-  /* -------------------------------------------------------------------------- */
-  /*                                  PROTECTED                                 */
-  /* -------------------------------------------------------------------------- */
   protected execSpawnSync(cmd: string, args?: string[], options?: SpawnSyncOptions): Response<string> {
     const response = new Response<string>();
     const result = spawnSync(cmd, args, options);
@@ -98,7 +94,7 @@ export class Console {
     };
     const result = this.execSpawnSync(command.cmd, command.args, options);
     if (command.verbose) {
-      result.print();
+      result.print(this.logger);
     }
     return Response.process(result, command.isThrow);
   }

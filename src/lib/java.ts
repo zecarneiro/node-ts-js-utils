@@ -6,8 +6,8 @@ import { IJavaVm } from '../interface/Ijava-vm';
 
 export class Java {
   constructor(
-    private console: Console,
-    private fileSystem: FileSystem,
+    protected console: Console,
+    protected fileSystem: FileSystem,
   ) {
   }
 
@@ -64,6 +64,6 @@ export class Java {
   /* -------------------------------------------------------------------------- */
   /*                                   PRIVATE                                  */
   /* -------------------------------------------------------------------------- */
-  private readonly mvnCmd = 'mvn';
-  private readonly javaExec = 'java';
+  protected readonly mvnCmd = 'mvn';
+  protected readonly javaExec = 'java';
 }

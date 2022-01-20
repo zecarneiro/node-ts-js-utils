@@ -5,10 +5,8 @@ import { chalk } from 'zx';
 
 export class Response<T> {
   private fileSystem: FileSystem;
-  private logger: Logger;
   constructor() {
-    this.logger = global.nodeTsJsUtils.logger;
-    this.fileSystem = global.nodeTsJsUtils.fileSystem;
+    this.fileSystem = new FileSystem();
   }
   private _data: T | any;
   get data(): T {
@@ -62,15 +60,15 @@ export class Response<T> {
     return this.errorData.error || this.errorData.errorMsg ? true : false;
   }
 
-  print() {
+  print(logger: Logger) {
     if (this.data) {
-      this.logger.log(this.data);
+      logger.log(this.data);
     }
     if (this.hasError) {
-      this.logger.error(this.error.message);
+      logger.error(this.error.message);
     }
     if (this.status) {
-      this.logger.log(`Status: ${this.status}`);
+      logger.log(`Status: ${this.status}`);
     }
   }
 
@@ -84,7 +82,10 @@ export class Response<T> {
 
 
 export class ResponseBuilder<T> {
-  private response: Response<T> = new Response();
+  private response: Response<T>;
+  constructor() {
+    this.response = new Response();
+  }
 
   withData(val: T): ResponseBuilder<T> {
     this.response.data = val;
