@@ -102,10 +102,6 @@ export class Console {
   async exec(command: ICommandInfo): Promise<Response<string>> {
     const cmd = this.getCommandWithArgs(command);
     command = this.setDefaultCommandInfo(command);
-    if (command.verbose) {
-      this.logger.emptyLine();
-      this.logger.prompt(cmd);
-    }
     const response = new Response<string>();
     $.verbose = command.verbose;
     $.prefix = '';
