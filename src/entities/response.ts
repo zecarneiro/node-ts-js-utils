@@ -72,7 +72,7 @@ export class Response<T> {
     }
   }
 
-  static process<T>(response: Response<T>, setThrow: boolean = true): Response<T> {
+  static process<T>(response: Response<T>, setThrow?: boolean): Response<T> {
     if (response.hasError && setThrow) {
       throw new Error(chalk.red(response.error?.message));
     }

@@ -7,7 +7,7 @@ import { spawnSync, SpawnSyncOptions } from 'child_process';
 import { ICommandInfo } from '../../interface/Icomand-info';
 import { EPlatformType } from '../../enum/Eplatform-type';
 import { EErrorMessages } from '../../enum/Eerror-messages';
-import { $, question } from 'zx';
+import { $, nothrow, question } from 'zx';
 import * as PromptSync from 'prompt-sync';
 import { Logger } from '../logger';
 import { EShellType } from '../..';
@@ -112,13 +112,13 @@ export class Console {
     if (command.cwd && this.fileSystem.fileExist(command.cwd) && this.fileSystem.fileType(command.cwd) === EFileType.directory) {
       await $`${this.getChangeDirCmd(command.cwd)}`;
     }
-    const result = await $`${cmd}`;
+    const result = command.isThrow === false ? await nothrow($`${cmd}`) : await $`${cmd}`;
     $.quote = quote;
     response.data = result.stdout;
     response.data = response.data?.trim();
     response.errorMsg = result.stderr?.trim();
     response.status = result.exitCode;
-    return Response.process(response, command.isThrow);
+    return response;
   }
 
   readKeyboardSync(questionData: string, choices?: string[], canChoiceBeNull?: boolean): string {
@@ -252,6 +252,7 @@ export class Console {
       response = this.execSync({
         cmd: '(New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)',
         shellType: EShellType.powershell,
+        verbose: false,
       });
       if (!response.hasError && response.data.includes('True')) return true;
     }
