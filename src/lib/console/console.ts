@@ -10,6 +10,7 @@ import { EErrorMessages } from '../../enum/Eerror-messages';
 import { $, question } from 'zx';
 import * as PromptSync from 'prompt-sync';
 import { Logger } from '../logger';
+import { EShellType } from '../..';
 
 export class Console {
   constructor(
@@ -243,5 +244,17 @@ export class Console {
       response.error = new Error(EErrorMessages.invalidPlatform);
     }
     return Response.process(response, isThrow);
+  }
+
+  isRunAsAdmin(): boolean {
+    let response = new Response<string>();
+    if (this.fileSystem.isWindows) {
+      response = this.execSync({
+        cmd: '(New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)',
+        shellType: EShellType.powershell,
+      });
+      if (!response.hasError && response.data.includes('True')) return true;
+    }
+    return false;
   }
 }
