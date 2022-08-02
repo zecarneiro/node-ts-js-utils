@@ -59,6 +59,7 @@ export class Sqlite {
       const resultCmd = this.console.execSync({
         cmd: this.command,
         args: ['-version'],
+        verbose: false,
       });
       this.alreadyCheckExecFile = true;
       if (resultCmd.hasError) {

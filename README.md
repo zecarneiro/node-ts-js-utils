@@ -18,3 +18,8 @@ Run:
 
 For global data and functions call: `global.nodeTsJsUtils` with type `INodeTsJsUtilsGlobal<any>`
 
+## Publish
+
+1. `npm install`
+2. `npm publish`
+

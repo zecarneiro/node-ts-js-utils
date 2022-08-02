@@ -19,6 +19,10 @@ export class Functions {
     return new ResponseBuilder<string>().withData(nameArr && nameArr.length >= 2 ? nameArr[1] : '').build(); // we want the 3nd method in the call stack
   }
 
+  static get eolRegex(): RegExp {
+    return /\r?\n/;
+  }
+
   static async run<T>(caller: (...argsCaller: any[]) => any, args?: any[], thisArg?: any, isThrow?: boolean): Promise<Response<T>> {
     const result = new Response<T>();
     try {
@@ -290,5 +294,12 @@ export class Functions {
       case EFunctionsProcessType.bind:
         return callback.bind(thisArg, ...args);
     }
+  }
+
+  static hasEol(value: string): boolean {
+    if (value) {
+      return Functions.eolRegex.test(value);
+    }
+    return false;
   }
 }
